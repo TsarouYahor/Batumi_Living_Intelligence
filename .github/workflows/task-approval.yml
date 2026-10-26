@@ -1,0 +1,42 @@
+name: Task approval decisions
+on:
+  issue_comment:
+    types: [created]
+permissions:
+  issues: write
+  contents: read
+concurrency:
+  group: task-approval-${{ github.event.issue.number }}
+  cancel-in-progress: false
+jobs:
+  decision:
+    if: ${{ !github.event.issue.pull_request && (startsWith(github.event.comment.body, '/approve-task ') || startsWith(github.event.comment.body, '/reject-task ')) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/github-script@v7
+        env:
+          PRODUCT_OWNER: ${{ vars.PRODUCT_OWNER_LOGIN }}
+        with:
+          script: |
+            const {validate,revision,taskId} = require('./.github/scripts/approval.cjs');
+            const owner=process.env.PRODUCT_OWNER;
+            if (!owner) throw new Error('Настройте repository variable PRODUCT_OWNER_LOGIN');
+            const issue=(await github.rest.issues.get({...context.repo,issue_number:context.issue.number})).data;
+            // Предотвращаем коллизии ID: сверяем со всеми Issues репозитория.
+            const all=await github.paginate(github.rest.issues.listForRepo,{...context.repo,state:'all',per_page:100});
+            const id=taskId(issue.title);
+            const matches=all.filter(i=>!i.pull_request && taskId(i.title)===id);
+            const ids=new Set(matches.length===1 && matches[0].number===issue.number?[id]:[]);
+            const decision=validate({issue,comment:context.payload.comment,owner,approvedIds:ids});
+            const isApprove=decision.action==='approve-task';
+            const oldLabels=issue.labels.map(x=>x.name);
+            for(const label of ['approval:approved','approval:rejected']){
+              if(oldLabels.includes(label)) await github.rest.issues.removeLabel({...context.repo,issue_number:issue.number,name:label});
+            }
+            const newLabel=isApprove?'approval:approved':'approval:rejected';
+            await github.rest.issues.addLabels({...context.repo,issue_number:issue.number,labels:[newLabel]});
+            await github.rest.issues.createComment({...context.repo,issue_number:issue.number,
+              body:`Решение Product Owner: **${isApprove?'одобрено':'отклонено'}**.\n\nTask: \`${id}\`\nRevision: \`${revision(issue.body)}\`\nActor: \`${context.actor}\`\n\nЭто решение не запускает агента и не разрешает merge.`});

@@ -1,0 +1,278 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Задача разработки Batumi Living",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "owner_role",
+    "objective",
+    "dependencies",
+    "allowed_paths",
+    "acceptance_criteria",
+    "estimated_hours"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^(OR|AR|DA|BE|FE|AI|QA)-[0-9]{3,}$",
+      "description": "ID по роли: OR-001, AR-001, DA-001, BE-001, FE-001, AI-001 или QA-001. Нумерация отдельно для каждой роли."
+    },
+    "title": {
+      "type": "string",
+      "minLength": 5,
+      "description": "Краткое название задачи на русском языке."
+    },
+    "owner_role": {
+      "enum": [
+        "orchestrator",
+        "architect",
+        "data",
+        "backend",
+        "frontend",
+        "ai_analyst",
+        "qa"
+      ],
+      "description": "Роль агента-исполнителя."
+    },
+    "objective": {
+      "type": "string",
+      "minLength": 10,
+      "description": "Цель и ожидаемый результат задачи на русском языке."
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(OR|AR|DA|BE|FE|AI|QA)-[0-9]{3,}$"
+      },
+      "uniqueItems": true,
+      "description": "ID задач, которые должны завершиться раньше."
+    },
+    "allowed_paths": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      },
+      "description": "Разрешённые пути файлов в репозитории."
+    },
+    "acceptance_criteria": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      },
+      "description": "Проверяемые критерии готовности на русском языке."
+    },
+    "estimated_hours": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 4,
+      "description": "Оценка трудозатрат по задаче, максимум 4 часа."
+    },
+    "max_attempts": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2,
+      "default": 2,
+      "description": "Максимальное число попыток исполнения."
+    },
+    "status": {
+      "enum": [
+        "backlog",
+        "awaiting_task_approval",
+        "ready",
+        "in_progress",
+        "review",
+        "changes_requested",
+        "approved",
+        "done",
+        "blocked",
+        "failed"
+      ],
+      "description": "Текущее состояние задачи."
+    },
+    "approval_request_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Идентификатор запроса человеческого согласования, если требуется."
+    },
+    "task_approval": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Подтверждённое владельцем продукта разрешение на исполнение конкретной редакции задачи. Проверяется сервером, не принимается на веру из JSON.",
+      "additionalProperties": false,
+      "required": [
+        "task_revision",
+        "approval_id",
+        "approved_by",
+        "approved_at"
+      ],
+      "properties": {
+        "task_revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "approval_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "approved_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "approved_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "task_revision": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Идентификатор редакции или хеш канонического содержимого задачи, используемый для привязки согласования."
+    }
+  },
+  "description": "Стандартный контракт задачи оркестратора. Имена полей и системные значения остаются на английском.",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "owner_role": {
+            "const": "orchestrator"
+          }
+        },
+        "required": [
+          "owner_role"
+        ]
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "pattern": "^OR-[0-9]{3,}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "owner_role": {
+            "const": "architect"
+          }
+        },
+        "required": [
+          "owner_role"
+        ]
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "pattern": "^AR-[0-9]{3,}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "owner_role": {
+            "const": "data"
+          }
+        },
+        "required": [
+          "owner_role"
+        ]
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "pattern": "^DA-[0-9]{3,}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "owner_role": {
+            "const": "backend"
+          }
+        },
+        "required": [
+          "owner_role"
+        ]
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "pattern": "^BE-[0-9]{3,}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "owner_role": {
+            "const": "frontend"
+          }
+        },
+        "required": [
+          "owner_role"
+        ]
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "pattern": "^FE-[0-9]{3,}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "owner_role": {
+            "const": "ai_analyst"
+          }
+        },
+        "required": [
+          "owner_role"
+        ]
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "pattern": "^AI-[0-9]{3,}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "owner_role": {
+            "const": "qa"
+          }
+        },
+        "required": [
+          "owner_role"
+        ]
+      },
+      "then": {
+        "properties": {
+          "id": {
+            "pattern": "^QA-[0-9]{3,}$"
+          }
+        }
+      }
+    }
+  ]
+}

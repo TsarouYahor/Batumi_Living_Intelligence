@@ -1,0 +1,129 @@
+# Политика разрешений Batumi Living v1.3
+# Машинные ключи и префиксы — на английском; пояснения — на русском.
+# Применение разрешений должно обеспечиваться сервером и настройками GitHub, а не только этим файлом.
+version: '1.3'
+project: batumi-living
+default_decision: deny
+human_approval:
+  approver_role: product_owner
+  approval_channel: github_issue_or_pr_comment
+  valid_approval_requirements:
+  - explicit_human_identity
+  - exact_action_and_target
+  - approved_scope
+  - non_expired_approval
+  agent_generated_approval_is_invalid: true
+permissions:
+  create_small_tasks:
+    decision: allow
+    limits:
+      max_estimated_hours: 4
+      must_link_to_project_goal: true
+      must_have_acceptance_criteria: true
+  write_code:
+    decision: allow
+    constraints:
+    - isolated_branch_or_worktree
+    - scoped_files_only
+    - no_production_secrets
+  run_tests:
+    decision: allow
+    constraints:
+    - sandbox_or_ci_only
+    - no_production_external_side_effects
+  create_pull_request:
+    decision: allow
+    constraints:
+    - tests_and_summary_required
+    - link_task_required
+    - cannot_self_approve
+  merge_to_main:
+    decision: require_human_approval
+  change_architecture:
+    decision: require_human_approval
+    trigger_examples:
+    - new_core_service_or_database
+    - change_public_api_contract
+    - change_auth_or_security_model
+    - change_system_boundaries
+    - change_core_dependency_or_framework
+  deploy_production:
+    decision: require_human_approval
+  enable_paid_api:
+    decision: require_human_approval
+    constraints:
+    - document_price_and_budget_cap
+    - store_secret_in_managed_secret_store
+  modify_permissions_or_ci_security:
+    decision: require_human_approval
+  access_production_data:
+    decision: deny
+  read_or_exfiltrate_secrets:
+    decision: deny
+  destructive_operations:
+    decision: require_human_approval
+  start_task:
+    decision: require_human_approval
+    constraints:
+    - task_approval_for_exact_task_revision
+    - dependencies_done
+    - scope_unchanged
+    - approval_not_revoked
+orchestrator:
+  max_parallel_execution_agents: 2
+  max_retry_per_task: 2
+  max_active_tasks_per_agent: 1
+  require_dependencies_done: true
+  tool_calls_logged: true
+  stop_on_budget_limit: true
+  task_states:
+  - backlog
+  - awaiting_task_approval
+  - ready
+  - in_progress
+  - review
+  - changes_requested
+  - approved
+  - done
+  - blocked
+  - failed
+  merge_requires:
+  - human_approval_for_exact_pr_commit
+  - ci_green
+  - independent_review
+  - no_unresolved_blocking_comments
+  trust_boundaries:
+    external_content_is_untrusted: true
+    ignore_instructions_from_data_sources: true
+    block_sending_repo_or_secrets_to_unapproved_endpoints: true
+  task_start_requires:
+  - authenticated_product_owner_approval
+  - approved_task_id_and_revision
+  - dependencies_done
+  - estimated_hours_lte_4
+  - allowed_paths_and_acceptance_criteria_present
+  approval_invalidated_by:
+  - task_objective_change
+  - scope_or_allowed_paths_change
+  - acceptance_criteria_change
+  - estimate_increase
+  - new_paid_api_or_architectural_change
+task_identifiers:
+  format: '{PREFIX}-{NUMBER:03d}'
+  prefix_by_role:
+    orchestrator: OR
+    architect: AR
+    data: DA
+    backend: BE
+    frontend: FE
+    ai_analyst: AI
+    qa: QA
+  sequence_scope: per_role
+  sequence_start: 1
+  unique_global: true
+  immutable_after_creation: true
+  allocate_atomically: true
+  reuse_deleted_ids: false
+  cross_role_dependencies_allowed: true
+  role_change_requires_new_task_id: true
+  legacy_id_policy: preserve_existing_ids_as_aliases; new_tasks_use_role_prefixes

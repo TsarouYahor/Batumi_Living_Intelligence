@@ -1,0 +1,37 @@
+name: Предложение задачи агента
+description: Задача требует отдельного согласования Product Owner
+title: "[FE-001] Название задачи"
+labels: ["task:proposal"]
+body:
+  - type: dropdown
+    id: role
+    attributes:
+      label: Роль агента
+      options: [Orchestrator, Architect, Data Research, Backend, Frontend, AI Analyst, QA]
+    validations:
+      required: true
+  - type: textarea
+    id: objective
+    attributes:
+      label: Цель и результат
+    validations:
+      required: true
+  - type: input
+    id: estimate
+    attributes:
+      label: Оценка времени (часы, не больше 4)
+      placeholder: '2'
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Критерии приёмки
+    validations:
+      required: true
+  - type: textarea
+    id: paths
+    attributes:
+      label: Разрешённые пути и зависимости
+    validations:
+      required: true
